@@ -110,10 +110,10 @@ static void tx_task(void *arg){
     (void)arg;out_event e;uint8_t frame[NC_MAX_FRAME];uint32_t last=0;
     while(1){
         if(xQueueReceive(txqueue,&e,pdMS_TO_TICKS(20))==pdTRUE){
-            /* Don't delay input by sending old movement packets. */
-            if(e.type==NC_MOUSE&&(uint32_t)((uint32_t)esp_timer_get_time()-e.time)>20000u){
-                dropped++;continue;
-            }
+            /* Never discard mouse packets here: a stale packet may carry
+               a button release. Dropping it can leave a button held in the
+               remapper until a later packet arrives. Queue saturation is
+               reported separately in the status frame. */
             size_t n=nc_encode(frame,sizeof(frame),e.type,seq++,e.time,e.data,e.len);
             if(n)uart_write_bytes(IPC,frame,n);
         }
