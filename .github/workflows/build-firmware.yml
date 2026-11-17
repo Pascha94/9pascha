@@ -1,0 +1,33 @@
+name: NIMRODCORE MAKCU experimental dual ESP32-S3 build
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  firmware:
+    runs-on: ubuntu-latest
+    container:
+      image: espressif/idf:release-v5.5
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build matching 4MB DIO images
+        shell: bash
+        run: |
+          set -euo pipefail
+          . "$IDF_PATH/export.sh"
+          idf.py -C LEFT set-target esp32s3
+          idf.py -C LEFT build
+          idf.py -C RIGHT set-target esp32s3
+          idf.py -C RIGHT build
+          mkdir -p flashable
+          idf.py -C LEFT merge-bin -f raw -o "$GITHUB_WORKSPACE/flashable/NIMRODCORE_LEFT_MERGED.bin"
+          idf.py -C RIGHT merge-bin -f raw -o "$GITHUB_WORKSPACE/flashable/NIMRODCORE_RIGHT_MERGED.bin"
+          sha256sum flashable/*.bin > flashable/SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NIMRODCORE-v0.7-UNTESTED-LEFT-RIGHT
+          path: flashable/
+          if-no-files-found: error
