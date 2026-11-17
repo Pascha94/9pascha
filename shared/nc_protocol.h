@@ -9,6 +9,7 @@
 #define NC_MOUSE 1
 #define NC_KEYBOARD 2
 #define NC_STATUS 3
+#define NC_KEYBOARD_NKRO 4
 #define NC_MAX_PAYLOAD 64
 #define NC_MAX_FRAME 77
 typedef struct { uint8_t type, len; uint16_t seq; uint32_t time_us; uint8_t data[64]; } nc_packet;
@@ -19,6 +20,7 @@ static inline uint16_t nc_crc(const uint8_t *p, size_t n) {
 }
 static inline size_t nc_encode(uint8_t *out,size_t cap,uint8_t type,uint16_t seq,uint32_t time,const uint8_t *data,uint8_t len){
     if(!out||!data||len>NC_MAX_PAYLOAD||cap<(size_t)13+len)return 0;
+    if(type<NC_MOUSE||type>NC_KEYBOARD_NKRO)return 0;
     out[0]='N';out[1]='C';out[2]=1;out[3]=type;out[4]=len;
     out[5]=seq&255;out[6]=seq>>8;
     for(int i=0;i<4;i++)out[7+i]=(uint8_t)(time>>(i*8));
@@ -30,7 +32,7 @@ static inline size_t nc_encode(uint8_t *out,size_t cap,uint8_t type,uint16_t seq
 static inline int nc_decode(const uint8_t *p,size_t n,nc_packet *out,size_t *used){
     *used=0;
     if(n<5)return 0;
-    if(p[0]!='N'||p[1]!='C'||p[2]!=1||p[4]>NC_MAX_PAYLOAD||(p[3]!=1&&p[3]!=2&&p[3]!=3)){*used=1;return -1;}
+    if(p[0]!='N'||p[1]!='C'||p[2]!=1||p[4]>NC_MAX_PAYLOAD||(p[3]<1||p[3]>4)){*used=1;return -1;}
     size_t total=13+p[4];if(n<total)return 0;
     uint16_t actual=nc_crc(p+2,9+p[4]),want=p[11+p[4]]|((uint16_t)p[12+p[4]]<<8);
     if(actual!=want){*used=1;return -1;}
