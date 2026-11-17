@@ -1,7 +1,7 @@
 name: NIMRODCORE MAKCU experimental dual ESP32-S3 build
 on:
   push:
-    branches: [main]
+    branches: [main, nimrodcore-v09-build]
   workflow_dispatch:
 permissions:
   contents: read
@@ -30,6 +30,6 @@ jobs:
           sha256sum flashable/*.bin > flashable/SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: NIMRODCORE-v0.7-UNTESTED-LEFT-RIGHT
+          name: NIMRODCORE-v0.9-UNTESTED-LEFT-RIGHT
           path: flashable/
           if-no-files-found: error
